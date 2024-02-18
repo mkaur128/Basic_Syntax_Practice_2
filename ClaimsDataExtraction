@@ -1,0 +1,36 @@
+---SQL Queries produced in SSMS---
+---Practice case study resource from Udemy--- 
+---JOIN, INNER JOIN, LEFT JOIN Syntax---
+
+#Query 1: What is the name of the patient on ClaimNumber 752663830-X? 
+
+SELECT Claim.ClaimNumber, Patient.FirstName, Patient.MiddleName, Patient.LastName
+FROM Claim
+INNER JOIN Claimant ON Claim.ClaimID = Claimant.ClaimID
+INNER JOIN Patient ON Claimant.PatientID = Patient.PatientID
+WHERE Claim.ClaimNumber = '752663830-X'
+
+#Query 2: Which offices have the most users?
+
+SELECT Office.OfficeDesc AS Office, COUNT(Users.Username) AS UserCount
+FROM Office
+LEFT JOIN Users ON Office.OfficeID = Users.OfficeID
+GROUP BY Office.OfficeDesc
+ORDER BY COUNT(Users.UserName) DESC
+
+#Query 3: Select all the reserve changes made by a user in San Francisco?
+
+SELECT Office.OfficeDesc, Reserve.* 
+FROM Reserve
+INNER JOIN Users ON Reserve.EnteredBy = Users.UserName
+INNER JOIN Office ON Users.OfficeID = Office.OfficeID
+WHERE Office.OfficeDesc = 'San Francisco' 
+
+#Query 4: Find the ReserveType bucket of each reserve change?
+
+SELECT ISNULL(RT2.ReserveTypeDesc, RT1.ReserveTypeDesc) AS ReserveBucket
+	, RT2.ReserveTypeDesc AS ReserveParent, RT1.ReserveTypeDesc
+	, Reserve.*
+FROM Reserve
+INNER JOIN ReserveType RT1 ON Reserve.ReserveTypeID = RT1.reserveTypeID
+LEFT JOIN ReserveType RT2 ON RT2.reserveTypeID = RT1.ParentID
