@@ -34,3 +34,39 @@ SELECT ISNULL(RT2.ReserveTypeDesc, RT1.ReserveTypeDesc) AS ReserveBucket
 FROM Reserve
 INNER JOIN ReserveType RT1 ON Reserve.ReserveTypeID = RT1.reserveTypeID
 LEFT JOIN ReserveType RT2 ON RT2.reserveTypeID = RT1.ParentID
+
+#Query 5:  Gather information on the Reserving Tool's underlying claims 
+
+SELECT Claim.ClaimNumber
+	, R.ReserveAmount
+	, O.OfficeDesc
+	, U1.UserName AS ExaminerCode
+	, U2.UserName AS SupervisorCode
+	, U3.UserName AS ManagerCode
+	, U1.Title AS ExaminerTitle
+	, U2.Title AS SupervisorTitle
+	, U3.Title AS ManagerName
+	, ClaimStatus.ClaimStatusDesc
+	, Patient.LastName + ', ' + TRIM(Patient.FirstName + ' ' + Patient.MiddleName) AS ClaimantName
+	, Claimant.ReopenedDate
+	, CT.ClaimantTypeDesc
+	, O.State
+	, U1.ReserveLimit
+	, (CASE 
+		WHEN ReserveType.ParentID IN (1, 2, 3, 4, 5) THEN ReserveType.ParentID
+		ELSE ReserveType.reserveTypeID
+		END) AS ReserveCostID 
+FROM Claimant
+INNER JOIN Claim ON Claim.ClaimID = Claimant.ClaimID
+INNER JOIN Users U1 ON U1.UserName = Claim.ExaminerCode
+INNER JOIN Users U2 ON U1.Supervisor = U2.UserName
+INNER JOIN Users U3 ON U2.Supervisor = U3.UserName
+INNER JOIN Office O ON U1.OfficeID = O.OfficeID
+INNER JOIN ClaimantType CT ON CT.ClaimantTypeID = Claimant.ClaimantTypeID
+INNER JOIN Reserve R ON R.ClaimantID = Claimant.ClaimantID
+LEFT JOIN ClaimStatus ON ClaimStatus.ClaimStatusID = Claimant.claimStatusID
+LEFT JOIN ReserveType ON ReserveType.reserveTypeID = R.ReserveTypeID
+LEFT JOIN Patient ON Patient.PatientID = Claimant.PatientID
+WHERE O.OfficeDesc IN ('Sacramento', 'San Francisco', 'San Diego') 
+	AND (ReserveType.ParentID IN (1, 2, 3, 4, 5) OR ReserveType.reserveTypeID IN (1, 2, 3, 4, 5))
+	AND (ClaimStatus.ClaimStatusID = 1 OR (ClaimStatus.ClaimStatusID = 2 AND Claimant.ReopenedReasonID <> 3))
